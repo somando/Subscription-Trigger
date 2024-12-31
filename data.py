@@ -20,10 +20,10 @@ def getItems(date):
     
     while 'LastEvaluatedKey' in response:
         response = table.query(
-        IndexName='NextDateIndex',
-        KeyConditionExpression=Key('next_date').eq(date),
-        FilterExpression=Attr('pause').eq(False),
-        ExclusiveStartKey=response['LastEvaluatedKey']
+            IndexName='NextDateIndex',
+            KeyConditionExpression=Key('next_date').eq(date),
+            FilterExpression=Attr('pause').eq(False),
+            ExclusiveStartKey=response['LastEvaluatedKey']
         )
         items.extend(response.get('Items', []))
     
@@ -67,7 +67,7 @@ def nextDate(date, interval, unit):
     
     elif unit == "year":
         
-        next_date = now_next_date + relativedelta(year=interval)
+        next_date = now_next_date + relativedelta(years=interval)
     
     else:
         
