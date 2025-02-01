@@ -1,3 +1,18 @@
+import requests
+
+def get_exchange_rates():
+    try:
+        response = requests.get("https://api.exchangerate-api.com/v4/latest/JPY")
+        data = response.json()
+        if "rates" in data:
+            return data["rates"]
+        else:
+            print("為替レート情報が取得できませんでした:", data)
+            return {}
+    except Exception as e:
+        print("Exchange rate error:", e)
+        return {}
+
 def unitConvert(unit):
     if unit == "day":
         return "日"
@@ -11,6 +26,24 @@ def unitConvert(unit):
         return "(不明)"
 
 def item(item, day):
+    # 料金のフォーマット処理
+    if item["currency"] == "JPY":
+        # JPYの場合は整数にして3桁ごとにカンマ区切りで表示
+        price_text = "JPY " + format(int(item["price"]), ",")
+    else:
+        # 外貨の場合、APIから毎回為替レートを取得して換算する
+        exchange_rates = get_exchange_rates()
+        if item["currency"] in exchange_rates:
+            rate = exchange_rates[item["currency"]]
+            # 外貨価格から JPY 換算値を計算（例：USDの場合：price / rate）
+            converted = float(item["price"]) / rate
+            price_text = (f'{item["currency"]} ' +
+                          format(float(item["price"]), ",.2f") +
+                          f'（約 JPY {format(converted, ",.2f")}）')
+        else:
+            price_text = (f'{item["currency"]} ' +
+                          format(float(item["price"]), ",.2f") +
+                          "（レート取得エラー）")
     data = {
       "type": "bubble",
       "body": {
@@ -34,7 +67,7 @@ def item(item, day):
           },
           {
             "type": "text",
-            "text": f'¥{item["price"]}',
+            "text": price_text,
             "weight": "regular",
             "size": "lg",
             "wrap": True,
@@ -170,7 +203,7 @@ def item(item, day):
     }
     
     if "memo" in item:
-        data["body"]["contents"][2]["contents"].append({
+        data["body"]["contents"][3]["contents"].append({
           "type": "box",
           "layout": "baseline",
           "spacing": "sm",
